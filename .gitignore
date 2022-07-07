@@ -1,3 +1,10 @@
+animate/
+asd/
+.idea/
+.git/
+*.png
+*.gif
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
