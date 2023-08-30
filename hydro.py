@@ -1,73 +1,52 @@
 import time
-
-import numpy
+import numpy as np
 import math
 import matplotlib.pyplot as plt
 import scipy.special
-from scipy.special import sph_harm
 
 
-def hydrogen_wf(n,l,m,X,Y,Z):
-    # R = radial coordinate
-    R = numpy.sqrt(X**2+Y**2+Z**2)
-    # angle theta between Z axis and R radial coordinate
-    Theta = numpy.arccos(Z/R)
-    # angle phi between Z axis and R coordinate
-    Phi = numpy.arctan2(Y,X)
-    
-    
-    rho = 2.*R/n
-    # sph_harm = spherical harmonic oscilator
-    s_harm=sph_harm(m, l, Phi, Theta)
-    
-    l_poly = scipy.special.genlaguerre(n-l-1,2*l+1)(rho)
-    
-    prefactor = numpy.sqrt((2./n)**3*math.factorial(n-l-1)/(2.*n*math.factorial(n+l)))
-    wf = prefactor*numpy.exp(-rho/2.)*rho**l*s_harm*l_poly
-    wf = numpy.nan_to_num(wf)
-    return wf
+def calculate_coordinates(zmin, zmax, dz):
+    axis_range = np.arange(zmin, zmax, dz)
+    X, Y, Z = np.meshgrid(axis_range, axis_range, axis_range)
+    return X, Y, Z, axis_range
+
+
+def calculate_quantum_prefactor(n, l):
+    return np.sqrt((2.0 / n) ** 3 * math.factorial(n - l - 1) / (2.0 * n * math.factorial(n + l)))
+
+
+def hydrogen_wf(n, l, m, X, Y, Z):
+    R = np.sqrt(X ** 2 + Y ** 2 + Z ** 2)
+    Theta = np.arccos(Z / R)
+    Phi = np.arctan2(Y, X)
+
+    rho = 2.0 * R / n
+    s_harm = scipy.special.sph_harm(m, l, Phi, Theta)
+    l_poly = scipy.special.genlaguerre(n - l - 1, 2 * l + 1)(rho)
+
+    prefactor = calculate_quantum_prefactor(n, l)
+    wf = prefactor * np.exp(-rho / 2.0) * rho ** l * s_harm * l_poly
+    return np.nan_to_num(wf)
+
 
 def get_sample():
-    # steps in space
-    dz=0.1
-    zmin=-5
-    zmax=5
-    x = numpy.arange(zmin,zmax,dz)
-    y = numpy.arange(zmin,zmax,dz)
-    z = numpy.arange(zmin,zmax,dz)
+    dz = 0.1
+    zmin = -5
+    zmax = 5
 
-    #X, Y, Z are 3d arrays that tell us the values of x, y, z at every point in space
-    X,Y,Z = numpy.meshgrid(x,y,z)
+    X, Y, Z, axis_range = calculate_coordinates(zmin, zmax, dz)
 
-    print('x coordinate',x)
-    print('y coordinate',y)
-    print('z coordinate',z)
+    n = 1
+    l = 0
+    m = 0
+    data = hydrogen_wf(n, l, m, X, Y, Z)
+    data = np.abs(data) ** 2
 
-    print('X coordinate',X)
-    print('Y coordinate',Y)
-    print('Z coordinate',Z)
-
-
-    #n : principal quantum number (main quantum number)
-    # l : angular momentum quantum number (momentum quantum nubmer)
-    # m : angular momentum projection quantum number (magnetic quantum nubmer)
-
-    # can vary by atom type
-    # for s1 orbital n=1 l=0 m=0 (hydrogen atom)
-    # for s1 orbital n=2 l=1 m=0 (hydrogen atom)
-
-
-
-    n=1
-    l=0
-    m=0
-    #hydrogen wavefunction coordinates and quantum numbers
-    data = hydrogen_wf(n,l,m,X,Y,Z)
-    data = abs(data)**2
-
-    R = numpy.sqrt(X**2+Y**2+Z**2)
-
-    sample = data[int(len(z)/2),int(len(z)/2),:]
-    sample.tolist()
-
+    slice_idx = int(len(axis_range) / 2)
+    sample = data[slice_idx, slice_idx, :]
     return list(sample)
+
+
+if __name__ == "__main__":
+    sample = get_sample()
+    print(sample)
